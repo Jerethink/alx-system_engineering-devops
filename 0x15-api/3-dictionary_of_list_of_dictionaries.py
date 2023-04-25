@@ -1,40 +1,19 @@
 #!/usr/bin/python3
-'''
-Exports all data to JSON
-'''
+"""Exports to-do list information of all employees to JSON format."""
 import json
 import requests
-import sys
-from collections import OrderedDict
-
-
-def get_users_todo():
-    """ export to main dictionary"""
-
-    emp = requests.get('https://jsonplaceholder.typicode.com/users')
-    users = {}
-    final_id = OrderedDict()
-    filename = "todo_all_employees.json"
-
-    for item in emp.json():
-        users[item['id']] = item['username']
-
-    with open(filename, 'w+') as f:
-        for user in users:
-            tasks = requests.get(
-                'https://jsonplaceholder.typicode.com/todos?userId={}'
-                .format(user))
-            tasks = tasks.json()
-            res = []
-            for task in tasks:
-                final = OrderedDict()
-                final['username'] = users[user]
-                final['task'] = task['title']
-                final['completed'] = task['completed']
-                res.append(final)
-            final_id[user] = res
-        json.dump(final_id, f)
-
 
 if __name__ == "__main__":
-    get_users_todo()
+    url = "https://jsonplaceholder.typicode.com/"
+    users = requests.get(url + "users").json()
+
+    with open("todo_all_employees.json", "w") as jsonfile:
+        json.dump({
+            u.get("id"): [{
+                "task": t.get("title"),
+                "completed": t.get("completed"),
+                "username": u.get("username")
+            } for t in requests.get(url + "todos",
+                                    params={"userId": u.get("id")}).json()]
+            for u in users}, jsonfile)
+
